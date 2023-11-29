@@ -31,7 +31,7 @@ Notes       :
 class uart_rx_agent extends uvm_agent;
 
   // Active/Passive Agent configuration
-  //uvm_active_passive_enum is_active = UVM_ACTIVE;
+  uvm_active_passive_enum is_active = UVM_ACTIVE;
   
   // Pointer to the UART config
   uart_config cfg;

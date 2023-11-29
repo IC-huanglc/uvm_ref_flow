@@ -56,6 +56,9 @@ class uart_tx_driver extends uvm_driver #(uart_frame) ;
     super.new(name,parent);
   endfunction
 
+  //added by huanglc at 20231125
+  extern virtual task dump_sample_clk(ref bit sample_clk);
+
   // Additional class methods
   extern virtual function void build_phase(uvm_phase phase);
   extern virtual function void connect_phase(uvm_phase phase);
@@ -72,8 +75,13 @@ endclass : uart_tx_driver
 function void uart_tx_driver::build_phase(uvm_phase phase);
     super.build_phase(phase);
     if(cfg == null)
+    begin
       if (!uvm_config_db#(uart_config)::get(this, "", "cfg", cfg))
        `uvm_error("NOCONFIG", "uart_config not set for this component")
+    end
+    else begin
+        `uvm_info(get_type_name(),"cfg is not null", UVM_LOW);
+    end
 endfunction : build_phase
 
 //UVM connect_phase
@@ -81,13 +89,27 @@ function void uart_tx_driver::connect_phase(uvm_phase phase);
   super.connect_phase(phase);
   if (!uvm_config_db#(virtual uart_if)::get(this, "", "vif", vif))
    `uvm_error("NOVIF",{"virtual interface must be set for: ",get_full_name(),".vif"})
+
+  if (uvm_config_db#(virtual uart_if)::get(this, "", "vif", vif))
+    `uvm_info(get_type_name(), "uart_if has got", UVM_LOW);
 endfunction : connect_phase
+
+//dump_sample_clk
+task uart_tx_driver::dump_sample_clk(ref bit sample_clk);
+    forever begin
+        @(posedge vif.clock);
+        vif.sample_clk = sample_clk;
+    end
+endtask
 
 //UVM run_phase
 task uart_tx_driver::run_phase(uvm_phase phase);
+  `uvm_info(get_type_name(), 
+        $sformatf("cfg.baud_rate_div = %0d, cfg.baud_rate_gen = %0d", cfg.baud_rate_div, cfg.baud_rate_gen), UVM_LOW)
   fork
     get_and_drive();
     gen_sample_rate(ua_brgr, sample_clk);
+    dump_sample_clk(sample_clk);
   join
 endtask : run_phase
 
@@ -112,6 +134,18 @@ task uart_tx_driver::get_and_drive();
     begin
       forever begin
         @(posedge vif.clock iff (vif.reset))
+        /* https://www.francisz.cn/2019/07/18/sv-iff/
+        @(posedge clk iff(vld));
+        do_something;
+    
+        //this is equal to the following:
+        forever begin
+            @(posedge clk)
+                if(vld) begin
+                    do_something;
+                end
+        end                     
+        //*/
         seq_item_port.get_next_item(req);
         send_tx_frame(req);
         seq_item_port.item_done();
@@ -141,7 +175,7 @@ task uart_tx_driver::gen_sample_rate(ref bit [15:0] ua_brgr, ref bit sample_clk)
         ua_brgr++;
       end
     end
-  end
+  end   //forever begin
 endtask : gen_sample_rate
 
 // -------------------
@@ -155,8 +189,12 @@ task uart_tx_driver::send_tx_frame(input uart_frame frame);
             $psprintf("Driver Sending TX Frame...\n%s", frame.sprint()),
             UVM_HIGH)
  
-  repeat (frame.transmit_delay)
-    @(posedge vif.clock);
+  repeat (frame.transmit_delay) @(posedge vif.clock);
+
+  /*
+其中使用void’的意义表示不考虑返回值。对于括号中有返回值的函数，加上void’操作符的意思就是告诉仿真器这个函数虽然有返回值，但是我不需要这个返回值。
+加上这个的唯一好处是可以让仿真器闭嘴：本来函数有返回值，但是你不使用，这时仿真器会抛出警告。加上void’可以关闭警告，让仿真log更干净。
+*/
   void'(this.begin_tr(frame));
    
   wait((!cfg.rts_en)||(!vif.cts_n));

@@ -32,6 +32,7 @@ class uart_sequencer extends uvm_sequencer #(uart_frame);
 
   virtual interface uart_if vif;
 
+  //huanglc comment: what's the usable of cfg in sequencer?
   uart_config cfg;
 
   `uvm_component_utils_begin(uart_sequencer)
@@ -45,9 +46,12 @@ class uart_sequencer extends uvm_sequencer #(uart_frame);
   // UVM build_phase
   function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      if(cfg == null)
+      if(cfg == null) begin
         if (!uvm_config_db#(uart_config)::get(this, "", "cfg", cfg))
           `uvm_warning("NOCONFIG", "uart_config not set for this component")
+      end
+      else
+        `uvm_info(get_type_name(), "cfg is not null", UVM_LOW);
   endfunction : build_phase
 
 endclass : uart_sequencer

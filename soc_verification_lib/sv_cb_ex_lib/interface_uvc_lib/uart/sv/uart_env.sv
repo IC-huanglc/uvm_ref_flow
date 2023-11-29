@@ -43,11 +43,13 @@ class uart_env extends uvm_env;
   uart_rx_agent Rx;
 
   // Used to update the config when it is updated during simulation
+  //huanglc comment: this component uses IMP, and you should 
+  //implement a function named "write" to use.
   uvm_analysis_imp#(uart_config, uart_env) dut_cfg_port_in;
 
   // This macro provide implementation of get_type_name() and create()
   `uvm_component_utils_begin(uart_env)
-    `uvm_field_object(cfg, UVM_DEFAULT)
+    `uvm_field_object(cfg, UVM_DEFAULT) //huanglc comment: the uart_config is an object, not a component.
     `uvm_field_int(checks_enable, UVM_DEFAULT)
     `uvm_field_int(coverage_enable, UVM_DEFAULT)
   `uvm_component_utils_end
@@ -65,21 +67,38 @@ class uart_env extends uvm_env;
   extern virtual task update_vif_enables();
   extern virtual function void write(uart_config cfg);
   extern virtual function void update_config(uart_config cfg);
+  extern virtual function void start_of_simulation_phase(uvm_phase phase);
 
 endclass : uart_env
 
 //UVM build_phase
 function void uart_env::build_phase(uvm_phase phase);
   super.build_phase(phase);
+  `uvm_info(get_type_name(), "entering build_phase", UVM_LOW);
   // Configure
-  if ( cfg == null)
+
+  //huanglc comment: this is standard coding style. If not get configure from top_tb
+  //then creat it by method "new()".
+  //In this case, uart_env get uart_config from demo_tb.
+  //And, the uvm_config_db#(uart_config)::get is omitted.
+  //Attention! demo_tb set demo_config to uart_env, and demo_config is extended from uart_config.
+  if ( cfg == null) begin
+    `uvm_info(get_type_name(), "uart_config is null", UVM_LOW);
     if (!uvm_config_db#(uart_config)::get(this, "", "cfg", cfg)) begin
-      `uvm_info("NOCONFIG", "No uart_config, creating...", UVM_MEDIUM)
+      `uvm_info("NOCONFIG", "No uart_config, creating...", UVM_MEDIUM);
       cfg = uart_config::type_id::create("cfg", this);
       if (!cfg.randomize())
          `uvm_error("RNDFAIL", "Could not randomize uart_config using default values")
-      `uvm_info(get_type_name(), {"Printing cfg:\n", cfg.sprint()}, UVM_MEDIUM)
+      `uvm_info(get_type_name(), {"Printing cfg:\n", cfg.sprint()}, UVM_MEDIUM);
     end
+    else begin 
+      `uvm_info(get_type_name(), "uart_config has got", UVM_LOW);
+    end
+  end
+  else begin
+    `uvm_info(get_type_name(), "uart_config is not null", UVM_LOW);
+  end
+
   // Configure the sub-components
   uvm_config_object::set(this, "Tx*", "cfg", cfg);
   uvm_config_object::set(this, "Rx*", "cfg", cfg);
@@ -100,6 +119,7 @@ endfunction : connect_phase
 // Function to assign the checks and coverage enable bits
 task uart_env::update_vif_enables();
   // Make assignments at time 0 based on configuration
+  //huanglc comment: I have not seen this coding style before.
   vif.has_checks <= checks_enable;
   vif.has_coverage <= coverage_enable;
   forever begin
@@ -120,6 +140,7 @@ endtask : run_phase
 function void uart_env::write(input uart_config cfg );
   this.cfg = cfg;
   update_config(cfg);
+  `uvm_info("IMP function write", "call write method", UVM_LOW);
 endfunction : write
 
 // Update Agent config when config updates
@@ -127,5 +148,11 @@ function void uart_env::update_config(input uart_config cfg );
   Tx.update_config(cfg);
   Rx.update_config(cfg);   
 endfunction : update_config
+
+//added by huanglc
+function void uart_env::start_of_simulation_phase(uvm_phase phase);
+    super.start_of_simulation_phase(phase);
+    dut_cfg_port_in.debug_provided_to();
+endfunction
 
 `endif

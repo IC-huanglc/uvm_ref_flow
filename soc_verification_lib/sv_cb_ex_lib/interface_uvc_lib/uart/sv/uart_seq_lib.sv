@@ -56,11 +56,20 @@ class uart_incr_payload_seq extends uart_base_seq;
 
     virtual task body();
      uvm_phase starting_phase = get_starting_phase();
+     /* huanglc comment: when use uvm default_sequence, in sequencer, the following are run auto
+      *
+      * seq.starting_phase = phase;
+      * seq.start(this);
+      so you can use starting_phase to raise and drop objection.
+      */
+
      if (starting_phase != null)
         starting_phase.raise_objection(this, {"Running sequence '",
                                               get_full_name(), "'"});
       `uvm_info(get_type_name(), "UART sequencer executing sequence...", UVM_LOW)
       for (int i = 0; i < cnt; i++) begin
+        //huanglc comment: this seq uses uvm_do_with
+        `uvm_info(get_type_name(), "huanglc comment: this seq uses uvm_do_with", UVM_LOW);
         `uvm_do_with(req, {req.payload == (start_payload +i*3)%256; })
       end
      if (starting_phase != null)
@@ -93,9 +102,14 @@ class uart_bad_parity_seq extends uart_base_seq;
       `uvm_info(get_type_name(),  "UART sequencer executing sequence...", UVM_LOW)
       for (int i = 0; i < cnt; i++)
       begin
+      //huanglc comment: this seq uses uvm_create and uvm_rand_send_with
+      `uvm_info(get_type_name(), "huanglc comment: this seq uses uvm_create and uvm_rand_send_with", UVM_LOW)
          // Create the frame
         `uvm_create(req)
          // Nullify the constrain on the parity
+         //huanglc comment: you can refer to this html: https://blog.csdn.net/lc_2418059806/article/details/122464491
+         //when you use constrain_mode, you should construct req, it means req = new() before you use constrain_mode.
+         //when you use constraint_mode without construct req, there will be an Error.
          req.default_parity_type.constraint_mode(0);
    
          // Now send the packed with parity constrained to BAD_PARITY
@@ -129,6 +143,7 @@ class uart_transmit_seq extends uart_base_seq;
         starting_phase.raise_objection(this, {"Running sequence '",
                                               get_full_name(), "'"});
      `uvm_info(get_type_name(), $psprintf("UART sequencer: Executing %0d Frames", num_of_tx), UVM_LOW)
+     `uvm_info(get_type_name(), "haunglc comment: first construct req, then start_item, assert, finish_item", UVM_LOW)
      req = uart_frame::type_id::create("req");
      for (int i = 0; i < num_of_tx; i++) begin
         start_item(req);
@@ -160,6 +175,7 @@ class no_activity_seq extends uart_base_seq;
         starting_phase.raise_objection(this, {"Running sequence '",
                                               get_full_name(), "'"});
     `uvm_info(get_type_name(), "UART sequencer executing sequence...", UVM_LOW)
+    `uvm_info(get_type_name(), "huanglc comment: this body is no activity", UVM_LOW)
      if (starting_phase != null)
         starting_phase.drop_objection(this, {"Completed sequence '",
                                              get_full_name(), "'"});
@@ -189,6 +205,7 @@ class uart_short_transmit_seq extends uart_base_seq;
                                               get_full_name(), "'"});
 
      `uvm_info(get_type_name(), $psprintf("UART sequencer: Executing %0d Frames", num_of_tx), UVM_LOW)
+     `uvm_info(get_type_name(), "huanglc comment: use uvm_do", UVM_LOW)
      for (int i = 0; i < num_of_tx; i++) begin
         `uvm_do(req)
      end

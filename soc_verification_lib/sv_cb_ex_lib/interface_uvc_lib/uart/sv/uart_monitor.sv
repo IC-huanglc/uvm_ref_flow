@@ -107,6 +107,7 @@ virtual class uart_monitor extends uvm_monitor;
   extern virtual task collect_frame();
   extern virtual task wait_for_sop(ref bit sop_detected);
   extern virtual task sample_and_store();
+  extern virtual function void start_of_simulation_phase(uvm_phase phase);
 endclass: uart_monitor
 
 // UVM build_phase
@@ -119,6 +120,7 @@ endfunction : build_phase
 
 function void uart_monitor::connect_phase(uvm_phase phase);
   super.connect_phase(phase);
+  //huanglc comment: in connect phase, check uart_if has got or not.
   if (!uvm_config_db#(virtual uart_if)::get(this, "","vif",vif))
       `uvm_error("NOVIF",{"virtual interface must be set for: ",get_full_name(),".vif"})
 endfunction : connect_phase
@@ -157,6 +159,7 @@ task uart_monitor::gen_sample_rate(ref bit [15:0] ua_brgr, ref bit sample_clk, r
 endtask
 
 task uart_monitor::start_synchronizer(ref bit serial_d1, ref bit serial_b);
+    //huanglc comment: this method is implemented in uart_tx_monitor and uart_rx_monitor
 endtask
 
 task uart_monitor::sample_and_store();
@@ -177,9 +180,9 @@ task uart_monitor::wait_for_sop(ref bit sop_detected);
       end
  //`uvm_info(get_type_name(), "HELLOOOOOOOOOOOOOOOOOOOOOOOOOOO", UVM_LOW)
       if (serial_b != 0)
+        //huanglc comment: the designer consider glitch on txd/rxd.
         `uvm_info(get_type_name(), "Encountered a glitch in serial during SOP, shall continue", UVM_LOW)
-      else
-      begin
+      else begin
         sop_detected = 1;
         `uvm_info(get_type_name(), "SOP detected", UVM_MEDIUM)
       end
@@ -234,7 +237,8 @@ task uart_monitor::collect_frame();
  num_frames++; 
  `uvm_info(get_type_name(), $psprintf("Collected the following Frame No:%0d\n%s", num_frames, cur_frame.sprint()), UVM_MEDIUM)
 
-  if(coverage_enable) perform_coverage();
+  if(coverage_enable) 
+    perform_coverage();
   frame_collected_port.write(cur_frame);
   this.end_tr(cur_frame);
 endtask : collect_frame
@@ -242,5 +246,12 @@ endtask : collect_frame
 function void uart_monitor::perform_coverage();
   uart_trans_frame_cg.sample();
 endfunction : perform_coverage
+
+//added by huanglc
+function void uart_monitor::start_of_simulation_phase(uvm_phase phase);
+    super.start_of_simulation_phase(phase);
+    frame_collected_port.debug_connected_to();
+    //this analysis port is not connected, so the method "write" is not used !!!
+endfunction
 
 `endif

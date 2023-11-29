@@ -31,7 +31,7 @@ Notes       :
 class uart_tx_agent extends uvm_agent;
 
   // Active/Passive Agent configuration
-  //uvm_active_passive_enum is_active = UVM_ACTIVE;
+  uvm_active_passive_enum is_active = UVM_ACTIVE;
 
   // Configuration
   uart_config cfg;
@@ -66,12 +66,18 @@ function void uart_tx_agent::build_phase(uvm_phase phase);
     if (!uvm_config_db#(uart_config)::get(this, "", "cfg", cfg))
     `uvm_warning("NOCONFIG", "Config not set for Tx agent, using default is_active field")
   end
-  else is_active = cfg.is_tx_active;
+  else begin
+    is_active = cfg.is_tx_active;
+    `uvm_info(get_type_name(), "uart_tx_agent.is_active = cfg.is_tx_active", UVM_LOW);
+  end
+
   monitor = uart_tx_monitor::type_id::create("monitor",this);   //lab3_note1
+  
   if (is_active == UVM_ACTIVE) begin
     //If UVM_ACTIVE create instances of UART Driver and Sequencer
     sequencer = uart_sequencer::type_id::create("sequencer",this);
     driver = uart_tx_driver::type_id::create("driver",this);
+    `uvm_info(get_type_name(), "sequencer and driver is created", UVM_LOW);
   end
 endfunction : build_phase
 

@@ -69,6 +69,8 @@ class uart_tx_monitor extends uart_monitor;
   endfunction: new
 
   // Additional class methods
+  //huanglc comment: the meaning of key word "ref" refers to 
+  //https://blog.csdn.net/weixin_42294124/article/details/124574042
   extern virtual task start_synchronizer(ref bit serial_d1, ref bit serial_b);
   extern virtual function void perform_coverage();
   extern virtual function void report_phase(uvm_phase phase);

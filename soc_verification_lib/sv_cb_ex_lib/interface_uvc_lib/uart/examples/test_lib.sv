@@ -41,7 +41,14 @@ class demo_base_test extends uvm_test;
     //demo_tb0.uart0.bus_monitor.set_report_verbosity_level(UVM_FULL);
   endfunction : connect_phase
 
+  virtual function void final_phase (uvm_phase phase);
+    super.final_phase(phase);
+    uvm_top.print_topology();
+  endfunction
+
   task run_phase(uvm_phase phase);
+    //huanglc comment: depth = 01 means print everything.
+    //you can refer to https://www.cnblogs.com/Alfred-HOO/articles/17524269.html
     //printer.knobs.depth = 5;
     this.print(printer);
    // Use the drain time for this phase

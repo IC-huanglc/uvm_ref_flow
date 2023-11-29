@@ -50,7 +50,13 @@ endclass : demo_tb
     super.build_phase(phase);
     // Create the configuration object
     demo_cfg = demo_config::type_id::create("demo_cfg");     
-    if (!demo_cfg.randomize() with {char_length==2'b11;}) `uvm_error("RNDFAIL", "Demo Config Randomization")
+    //huanglc comment: because of the char_length is not constrained in uart_config.sv 
+    //or in demo_config.sv, so you should constrain it in method called "randomize with".
+    if (!demo_cfg.randomize() with {
+        char_length==2'b11;
+        }) 
+        `uvm_error("RNDFAIL", "Demo Config Randomization")
+    `uvm_info(get_type_name(), "print demo_cfg", UVM_LOW)
     demo_cfg.print();
     uvm_config_object::set(this, "uart0*", "cfg", demo_cfg);
     uart0 = uart_env::type_id::create("uart0", this);

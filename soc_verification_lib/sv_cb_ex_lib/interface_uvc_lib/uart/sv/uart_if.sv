@@ -40,10 +40,13 @@ interface uart_if(input clock, reset);
   logic dcd_n;   // data carrier detect
 
   logic baud_clk;  // Baud Rate Clock
-  
+
   // Control flags
   bit                has_checks = 1;
   bit                has_coverage = 1;
+  
+  //added by huanglc at 20231125
+  bit sample_clk; 
 
 /*  FIX TO USE CONCURRENT ASSERTIONS
   always @(posedge clock)

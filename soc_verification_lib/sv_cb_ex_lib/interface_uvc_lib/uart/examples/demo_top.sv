@@ -24,6 +24,10 @@ module demo_top;
   // Import the test library
   `include "test_lib.sv"
 
+//    //added by huanglc
+//    demo_tb p_env;
+//    reg sample_clk = p_env.uart0.Rx.driver.sample_clk;
+
   bit clock;
   bit reset;
 

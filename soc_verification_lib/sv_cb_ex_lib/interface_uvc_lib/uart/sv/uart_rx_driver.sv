@@ -53,6 +53,9 @@ class uart_rx_driver extends uvm_driver #(uart_frame) ;
     super.new(name,parent);
   endfunction
 
+  //added by huanglc at 20231125
+  extern virtual task dump_sample_clk(ref bit sample_clk);
+
   // Additional class methods
   extern virtual function void build_phase(uvm_phase phase);
   extern virtual function void connect_phase(uvm_phase phase);
@@ -82,11 +85,23 @@ endfunction : connect_phase
 
 //UVM run_phase
 task uart_rx_driver::run_phase(uvm_phase phase);
+  `uvm_info(get_type_name(), 
+        $sformatf("cfg.baud_rate_div = %0d, cfg.baud_rate_gen = %0d", cfg.baud_rate_div, cfg.baud_rate_gen), UVM_LOW)
   fork
     get_and_drive();
     gen_sample_rate(ua_brgr, sample_clk);
+    dump_sample_clk(sample_clk);
   join
 endtask : run_phase
+
+//dump_sample_clk
+task uart_rx_driver::dump_sample_clk(ref bit sample_clk);
+    forever begin
+    //@(posedge vif.clock)
+    @(sample_clk);
+    vif.sample_clk = sample_clk;
+    end
+endtask
 
 // reset
 task uart_rx_driver::reset();
@@ -226,6 +241,8 @@ function void uart_rx_driver::report_phase(uvm_phase phase);
   `uvm_info(get_type_name(),
        $psprintf("UART Frames Sent:%0d", num_frames_sent),
        UVM_LOW )
+  //added by huanglc
+  seq_item_port.debug_connected_to();
 endfunction : report_phase
 
 `endif // UART_RX_DRIVER

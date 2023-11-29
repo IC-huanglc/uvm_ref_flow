@@ -29,7 +29,7 @@ Notes       : The uart_ctrl_top module instantiates the UART DUT,
 `include "apb_master_if.sv"
 `include "apb_slave_if.sv"
 `include "uart_if.sv"
-`include "coverage/uart_ctrl_internal_if.sv"
+`include "coverage/uart_ctrl_internal_if.sv"  //just an input clock, and 2 int, indicate tx/rx fifo pointer.
 
 module uart_ctrl_top;
   // Import the UVM Library and UVM macros
@@ -61,7 +61,10 @@ module uart_ctrl_top;
   uart_if               uart_if0(.clock(div8_clk[2]), .reset(reset));
   uart_ctrl_internal_if uart_int0(.clock(div8_clk[2]));
 
-  assign wb_sel = (apb_if0.paddr[1:0] == 0) ? 4'b0001 : (apb_if0.paddr[1:0] == 1 ? 4'b0010 : (apb_if0.paddr[1:0] == 2 ? 4'b0100 : 4'b1000)); 
+  assign wb_sel = (apb_if0.paddr[1:0] == 0) ? 4'b0001 : 
+                  (apb_if0.paddr[1:0] == 1  ? 4'b0010 : 
+                  (apb_if0.paddr[1:0] == 2  ? 4'b0100 : 4'b1000));
+
   assign dummy_dbus = {4{apb_if0.pwdata[7:0]}};
   assign apb_if0.prdata[7:0] = dummy_rdbus[31:24] | dummy_rdbus[23:16] | dummy_rdbus[15:8] | dummy_rdbus[7:0];
 
@@ -77,39 +80,42 @@ module uart_ctrl_top;
 
   //RTL Instantiation
   uart_top uart_dut(
-	.wb_clk_i(clock), 
-	
-	// Wishbone signals
-	.wb_rst_i(~reset),
-        .wb_adr_i(apb_if0.paddr[4:0]),
-        .wb_dat_i(dummy_dbus),
-        .wb_dat_o(dummy_rdbus),
-        .wb_we_i(apb_if0.prwd),
-        .wb_stb_i(apb_if0.psel[0]),
-        .wb_cyc_i(apb_if0.psel[0]),
-        .wb_ack_o(apb_if0.pready),
-        .wb_sel_i(wb_sel),
-	.int_o(), // interrupt request
+	    .wb_clk_i(clock), 
+	    
+	    // Wishbone signals
+	    .wb_rst_i(~reset),
+      .wb_adr_i(apb_if0.paddr[4:0]),
+      .wb_dat_i(dummy_dbus),
+      .wb_dat_o(dummy_rdbus),
+      .wb_we_i(apb_if0.prwd),
+      .wb_stb_i(apb_if0.psel[0]),
+      .wb_cyc_i(apb_if0.psel[0]),
+      .wb_ack_o(apb_if0.pready),
+      .wb_sel_i(wb_sel),
+	    .int_o(), // interrupt request
 
-	// UART	signals
-	// serial input/output
-	.stx_pad_o(uart_if0.rxd),
-        .srx_pad_i(uart_if0.txd),
+	    // UART	signals
+	    // serial input/output
+	    .stx_pad_o(uart_if0.rxd),
+      .srx_pad_i(uart_if0.txd),
 
-	// modem signals
-	.rts_pad_o(rts_n),
-        .cts_pad_i(uart_if0.cts_n),
-        .dtr_pad_o(uart_if0.dtr_n),
-        .dsr_pad_i(uart_if0.dsr_n),
-        .ri_pad_i(uart_if0.ri_n),
-        .dcd_pad_i(uart_if0.dcd_n)
+	    // modem signals
+	    .rts_pad_o(rts_n),
+      .cts_pad_i(uart_if0.cts_n),
+      .dtr_pad_o(uart_if0.dtr_n),
+      .dsr_pad_i(uart_if0.dsr_n),
+      .ri_pad_i(uart_if0.ri_n),
+      .dcd_pad_i(uart_if0.dcd_n)
   );
 
   function bit _init_vif_function();
   // Configure Virtual Interfaces
-  uvm_config_db#(virtual uart_ctrl_internal_if)::set(null, "uvm_test_top.uart_ctrl_tb0.uart_ctrl0.*", "vif", uart_int0);
-  uvm_config_db#(virtual apb_if)::set(null, "uvm_test_top.uart_ctrl_tb0.apb0*", "vif", apb_if0);
-  uvm_config_db#(virtual uart_if)::set(null, "uvm_test_top.uart_ctrl_tb0.uart0*", "vif", uart_if0);
+  //huanglc comment: 竟然可以通过三个uvm_config_db写成一个带返回值的函数
+  //huanglc comment: 由于tb_top不属于uvm component, 也没有出现在uvm树形结构的任意位置, 
+  //故set的第一个参数设置为null. 不能用this，因为this是class类的指针，而tb_top不是class类。
+    uvm_config_db#(virtual uart_ctrl_internal_if)::set(null, "uvm_test_top.uart_ctrl_tb0.uart_ctrl0.*", "vif", uart_int0);
+    uvm_config_db#(virtual apb_if)::set(null, "uvm_test_top.uart_ctrl_tb0.apb0*", "vif", apb_if0);
+    uvm_config_db#(virtual uart_if)::set(null, "uvm_test_top.uart_ctrl_tb0.uart0*", "vif", uart_if0);
   endfunction
 
   bit init_vif = _init_vif_function();
@@ -137,6 +143,8 @@ module uart_ctrl_top;
     $displayh("uart_ctrl_top.uart_dut.regs.ier = ", uart_ctrl_top.uart_dut.regs.ier);
     $displayh("uart_ctrl_top.uart_dut.regs.iir = ", uart_ctrl_top.uart_dut.regs.iir);
     $displayh("uart_ctrl_top.uart_dut.regs.lcr = ", uart_ctrl_top.uart_dut.regs.lcr);
+    $displayh("");
+    $displayh("huanglc debug, init_vif = ", init_vif);
     $display("=======================================================");
   end
 

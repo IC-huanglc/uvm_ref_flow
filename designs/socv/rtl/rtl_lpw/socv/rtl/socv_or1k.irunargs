@@ -1,5 +1,0 @@
-
-// for OR1K
--F ${UVM_REF_HOME}/designs/socv/rtl/rtl_lpw/opencores/or1200.irunargs
-
-

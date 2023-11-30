@@ -6,3 +6,5 @@ comp:
 
 sim:
 	./simv -l sim.log +UVM_TESTNAME=uart_sequence_test +UVM_VERBOSITY=UVM_HIGH
+
+all: clean comp sim

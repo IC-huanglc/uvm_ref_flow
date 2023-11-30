@@ -25,6 +25,7 @@ Notes       :
 //----------------------------------------------------------------------
 
 // TLM Port Declarations
+//huanglc comment: 当出现analysis_imp所在的component需要接收多路数据的情况时，但write只有一个，那么该如何定义write函数呢？这时就用到了宏uvm_analysis_imp_decl
 `uvm_analysis_imp_decl(_rx)
 `uvm_analysis_imp_decl(_tx)
 `uvm_analysis_imp_decl(_cfg)

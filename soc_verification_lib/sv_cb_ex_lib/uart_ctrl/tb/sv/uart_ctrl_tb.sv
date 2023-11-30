@@ -102,13 +102,17 @@ endclass : uart_ctrl_tb
 
     //UVM_REG - Create and configure the register model
     if (reg_model == null) begin
+      `uvm_info(get_type_name(), "reg_model is null", UVM_LOW)
       // Only enable reg model coverage if enabled for the testbench
-      if (coverage_enable == 1) uvm_reg::include_coverage("*", UVM_CVR_ALL);
-      reg_model = uart_ctrl_reg_model_c::type_id::create("reg_model");
-      reg_model.build();  //NOTE: not same as build_phase: reg_model is an object
-      reg_model.lock_model();
+      if (coverage_enable == 1) 
+        uvm_reg::include_coverage("*", UVM_CVR_ALL);
+        reg_model = uart_ctrl_reg_model_c::type_id::create("reg_model");
+        reg_model.build();  //NOTE: not same as build_phase: reg_model is an object
+        reg_model.lock_model();
     end
     // set the register model for the rest of the testbench
+    //huanglc comment: which component or object get this reg_model ?
+    `uvm_info(get_tyep_name(), "huanglc comment: which component or object get this reg_model ?", UVM_LOW)
     uvm_config_object::set(this, "*", "reg_model", reg_model);
 
     // Create APB, UART, Module UVC and Virtual Sequencer
@@ -116,6 +120,8 @@ endclass : uart_ctrl_tb
     uart0             = uart_pkg::uart_env::type_id::create("uart0",this);
     uart_ctrl0        = uart_ctrl_env::type_id::create("uart_ctrl0",this);
     virtual_sequencer = uart_ctrl_virtual_sequencer::type_id::create("virtual_sequencer",this);
+    
+    `uvm_info(get_type_name(), "huanglc comment: virtual_sequencer should be create in enviornment");
 
   endfunction : build_phase
 
@@ -128,6 +134,7 @@ endclass : uart_ctrl_tb
     // ***********************************************************
     //  Hookup virtual sequencer to interface sequencers
     // ***********************************************************
+    `uvm_info(get_type_name(), "huanglc comment: get pointer to virtual_sqr.xxx")
     virtual_sequencer.reg_seqr = uart_ctrl0.reg_sequencer;
     virtual_sequencer.apb_seqr = apb0.master.sequencer;
     if (uart0.Tx.cfg.is_tx_active == UVM_ACTIVE)  
@@ -139,6 +146,11 @@ endclass : uart_ctrl_tb
     // ***********************************************************
     // Connect TLM ports
     // ***********************************************************
+    `uvm_info(get_type_name(), "huanglc comment: connecting...", UVM_LOW)
+    `uvm_info(get_type_name(), 
+      "huanglc comment: uart0.Rx/Tx.monitor's frame_collected_port is analysis port", UVM_LOW)
+    `uvm_info(get_type_name(), 
+      "huanglc comment: uart0.Rx/Tx.monitor's item_collected_port is analysis port", UVM_LOW)
     uart0.Rx.monitor.frame_collected_port.connect(uart_ctrl0.monitor.uart_rx_in);
     uart0.Tx.monitor.frame_collected_port.connect(uart_ctrl0.monitor.uart_tx_in);
     apb0.bus_monitor.item_collected_port.connect(uart_ctrl0.monitor.apb_in);
@@ -148,11 +160,13 @@ endclass : uart_ctrl_tb
     // ***********************************************************
     // Connect the dut_cfg ports
     // ***********************************************************
+    //huanglc comment: uart_cfg_out is uvm_analysis_port, dut_cfg_port_in is uvm_analysis_imp
     uart_ctrl0.uart_cfg_out.connect(uart0.dut_cfg_port_in);
 
   endfunction : connect_phase
 
   task uart_ctrl_tb::run_phase(uvm_phase phase);
+    //huanglc comment: what's the meaning of it ?
     printer.knobs.depth = 5;
     printer.knobs.name_width = 25;
     printer.knobs.type_width = 20;

@@ -48,6 +48,7 @@ class ua_div_latch0_c extends uvm_reg;
     option.per_instance=1;
     div_val : coverpoint div_val.value[7:0];
   endgroup
+
   covergroup rd_cg;
     option.per_instance=1;
     div_val : coverpoint div_val.value[7:0];

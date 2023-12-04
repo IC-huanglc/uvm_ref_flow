@@ -60,6 +60,8 @@ class ua_div_latch0_c extends uvm_reg;
     if(is_read) rd_cg.sample();
   endfunction
 
+  //huanglc comment, https://www.nowcoder.com/discuss/405328613292208128
+  //https://cfs-vision.com/2022/03/07/how_to_use_uvm_callbacks_with_configuration_fields/
   `uvm_register_cb(ua_div_latch0_c, uvm_reg_cbs) 
   `uvm_set_super_type(ua_div_latch0_c, uvm_reg)
   `uvm_object_utils(ua_div_latch0_c)

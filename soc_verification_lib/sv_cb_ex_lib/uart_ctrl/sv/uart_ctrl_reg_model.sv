@@ -22,14 +22,29 @@ class ua_div_latch0_c extends uvm_reg;
   rand uvm_reg_field div_val;
 
   constraint c_div_val { div_val.value == 1; }
+  //huanglc comment: in all uvm_reg class, you should implement a function build.
   virtual function void build();
     div_val = uvm_reg_field::type_id::create("div_val");
+    /* configure(
+        parent, 
+     *  data width, 
+        data start bit,
+        RW,
+        volatile ? 1:0,
+        reset value,
+        random ? 1:0,
+        read/write independly);
+     //*/
     div_val.configure(this, 8, 0, "RW", 0, `UVM_REG_DATA_WIDTH'h00>>0, 1, 1, 1);
+    
+    //huanglc comment, set_inst_name(string)来设置covergroup名称
+    //https://blog.csdn.net/Jay_who/article/details/105919445
     wr_cg.set_inst_name($sformatf("%s.wcov", get_full_name()));
     rd_cg.set_inst_name($sformatf("%s.rcov", get_full_name()));
   endfunction
 
   covergroup wr_cg;
+    //huanglc comment, option.per_instance = 1;表示covergroup的每一个实例的覆盖率都要单独计算。 如果对一个covergroup实例化了很多次，那么SV默认会把所有实例的覆盖率合并在一起
     option.per_instance=1;
     div_val : coverpoint div_val.value[7:0];
   endgroup
